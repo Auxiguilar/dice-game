@@ -1,4 +1,8 @@
+import logging
 from random import randint as ri
+
+
+logger = logging.getLogger(__name__)
 
 
 def score_dice(dice: list[int]) -> int:
@@ -62,6 +66,7 @@ def score_dice(dice: list[int]) -> int:
         score += value
     
     # Oh my god...
+    logger.debug(f'score: {score}')
     return score
 
 def dice_selection_valid(dice: list[int]) -> bool:
@@ -79,8 +84,10 @@ def dice_selection_valid(dice: list[int]) -> bool:
         
     for num in dice_of_concern.values():
         if num > 0 and num < 3:
+            logger.debug(f'valid: False')
             return False
     
+    logger.debug(f'valid: True')
     return True
 
 def select_dice(dice: list[int]) -> list[int]:
@@ -89,23 +96,38 @@ def select_dice(dice: list[int]) -> list[int]:
     
     while True:
         choices: str = input('Select dice based on list index:\n> ').strip()
+        logger.debug(f'choices: "{choices}"')
 
         for c in choices:
             if c.isdigit():
                 indexes.append(int(c))
-        
+
         if len(indexes) > len(dice):
+            logger.debug('choices > number of dice')
+            indexes.clear()
             continue
 
+        logger.debug(f'indexes: {indexes}')
         for i in indexes:
-            selection.append(dice[i])
+            try:
+                selection.append(dice[i])
+            except IndexError as ie:
+                logger.error(ie)
+                break
+
+        if (len(selection) != len(indexes)) or ((not selection) or (not indexes)):
+            indexes.clear()
+            selection.clear()
+            continue
 
         break
-
+    
+    logger.debug(f'selection: {selection}')
     return selection
 
 def is_scorable(dice: list[int]) -> bool:
     if 1 in dice or 5 in dice:
+        logger.debug('scorable: True')
         return True
     
     for i in range(1,7):
@@ -118,8 +140,10 @@ def is_scorable(dice: list[int]) -> bool:
                 count += 1
         
         if count >= 3:
+            logger.debug('scorable: True')
             return True
         
+    logger.debug('scorable: False')
     return False
 
 def turn(num_dice: int = 6) -> int:
@@ -133,6 +157,8 @@ def turn(num_dice: int = 6) -> int:
         scorable: bool = is_scorable(dice)
         if not scorable:
             print('Loss!')
+
+            logger.debug(f'score: {0}')
             return 0
 
         while True:
@@ -149,25 +175,36 @@ def turn(num_dice: int = 6) -> int:
 
         if 'n' == input('Keep going? (Y/n)\n> ').lower().strip():
             break
-
+    
+    logger.debug(f'score: {score}')
     return score
 
 def throw_dice(num_dice: int) -> list[int]:
     dice: list[int] = [ri(1,6) for i in range(num_dice)]
     dice.sort()
+
+    logger.debug(f'dice: {dice}')
     return dice
 
 def round(player_scores: list[int]) -> None:
     for i in range(len(player_scores)):
+        logger.info(f'player {i + 1} turn')
+
         print(f'\nPlayer {i + 1}\'s turn!\nPlayer {i + 1}\'s score: {player_scores[i]}')
        
-        player_scores[i] += turn()
+        turn_score: int = turn()
+        logger.info(f'player {i + 1} turn score: {turn_score}')
+        player_scores[i] += turn_score
 
 def game_loop(player_count: int = 2, target_score: int = 5000):
-    total_score: int = 0
+    logger.info('game loop started')
+
     player_scores: list[int] = [0] * player_count
+    round_count: int = 0
 
     while True:
+        round_count += 1
+        logger.info(f'Game round: {round_count}')
         round(player_scores)
 
         for i in range(len(player_scores)):
@@ -177,4 +214,5 @@ def game_loop(player_count: int = 2, target_score: int = 5000):
                 for i in range(len(player_scores)):
                     print(f'Player {i + 1} score: {player_scores[i]}')
 
-                return  
+                logger.info(f'total player scores: {player_scores}')
+                return
