@@ -1,1 +1,1 @@
-uv run src/dice-game/main.py
+uv run src/dice-game/main.py "$@"

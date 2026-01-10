@@ -6,62 +6,33 @@ logger = logging.getLogger(__name__)
 
 
 def score_dice(dice: list[int]) -> int:
-    dice_num: dict[int, int] = {
-        1: 0,
-        2: 0,
-        3: 0,
-        4: 0,
-        5: 0,
-        6: 0
-    }
-
+    dice_num: dict[int, int] = {}
     for die in dice:
+        if not dice_num.get(die):
+            dice_num[die] = 1
+            continue
         dice_num[die] += 1
 
     score: int = 0
 
-    # For numbers 2, 3, 4, 6.
     for die, num in dice_num.items():
         if num == 0:
             continue
-        if die == 1 or die == 5:
-            continue
 
-        value: int = die
-        for i in range(num-1):
-            value *= 10
+        value: int = 0
 
-        score += value
-
-    # For number 1.
-    for die, num in dice_num.items():
-        if num == 0:
-            continue
-        if die != 1:
-            continue
-
-        value: int = 100
-        if num >= 3:
-            for i in range(num-2):
-                value *= 10
+        if die == 1 and num >= 3:
+            value = die * 1000 # 1000 (1 x 3+)
+        elif die == 5 and num < 3:
+            value = (die * 10) * num # 50 (5 x 1 | 2)
+        elif die == 1:
+            value = (die * 100) * num # 100 (1 x 1 | 2)
         else:
-            value *= num
+            value = die * 100 # x00
 
-        score += value
-
-    # For number 5.
-    for die, num in dice_num.items():
-        if num == 0:
-            continue
-        if die != 5:
-            continue
-
-        value: int = 50
-        if num >= 3:
-            for i in range(num-2):
-                value *= 10
-        else:
-            value *= num
+        # n x 3+
+        for i in range(num - 3):
+            value *= 2
 
         score += value
     
@@ -186,7 +157,7 @@ def throw_dice(num_dice: int) -> list[int]:
     logger.debug(f'dice: {dice}')
     return dice
 
-def round(player_scores: list[int]) -> None:
+def round(player_scores: list[int], target_score: int) -> None:
     for i in range(len(player_scores)):
         logger.info(f'player {i + 1} turn')
 
@@ -194,9 +165,14 @@ def round(player_scores: list[int]) -> None:
        
         turn_score: int = turn()
         logger.info(f'player {i + 1} turn score: {turn_score}')
+        
         player_scores[i] += turn_score
 
-def game_loop(player_count: int = 2, target_score: int = 5000):
+        if player_scores[i] >= target_score:
+            logger.debug(f'player {i + 1} score >= target_score')
+            return
+
+def game_loop(player_count: int = 2, target_score: int = 10_000):
     logger.info('game loop started')
 
     player_scores: list[int] = [0] * player_count
@@ -205,14 +181,15 @@ def game_loop(player_count: int = 2, target_score: int = 5000):
     while True:
         round_count += 1
         logger.info(f'Game round: {round_count}')
-        round(player_scores)
+        round(player_scores, target_score)
 
         for i in range(len(player_scores)):
-            if player_scores[i] > target_score:
+            if player_scores[i] >= target_score:
                 print(f'\nPlayer {i + 1} wins!')
+                logger.info(f'player {i + 1} wins')
 
                 for i in range(len(player_scores)):
                     print(f'Player {i + 1} score: {player_scores[i]}')
+                    logger.info(f'player {i + 1} score: {player_scores[i]}')
 
-                logger.info(f'total player scores: {player_scores}')
                 return
