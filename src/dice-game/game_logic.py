@@ -118,7 +118,7 @@ def is_scorable(dice: list[int]) -> bool:
     return False
 
 def turn(num_dice: int = 6) -> int:
-    score: int = 0
+    turn_score: int = 0
     used_dice: int = 0
     
     while True:
@@ -136,8 +136,9 @@ def turn(num_dice: int = 6) -> int:
             selection: list[int] = select_dice(dice)
             if dice_selection_valid(selection):
                 used_dice += len(selection)
-                score += score_dice(selection)
-                print(f'Remaining: {[die for die in dice if die not in selection]}\nScored: {selection}')
+                throw_score: int = score_dice(selection)
+                turn_score += throw_score
+                print(f'Remaining: {[die for die in dice if die not in selection]}\nScored: {selection} for {throw_score}')
                 break
         
         if used_dice == num_dice:
@@ -147,8 +148,8 @@ def turn(num_dice: int = 6) -> int:
         if 'n' == input('Keep going? (Y/n)\n> ').lower().strip():
             break
     
-    logger.debug(f'score: {score}')
-    return score
+    logger.debug(f'score: {turn_score}')
+    return turn_score
 
 def throw_dice(num_dice: int) -> list[int]:
     dice: list[int] = [ri(1,6) for i in range(num_dice)]
@@ -164,9 +165,10 @@ def round(player_scores: list[int], target_score: int) -> None:
         print(f'\nPlayer {i + 1}\'s turn!\nPlayer {i + 1}\'s score: {player_scores[i]}')
        
         turn_score: int = turn()
-        logger.info(f'player {i + 1} turn score: {turn_score}')
-        
         player_scores[i] += turn_score
+
+        print(f'Turn score: {turn_score}\nTotal score: {player_scores[i]}')
+        logger.info(f'player {i + 1} turn score: {turn_score}')
 
         if player_scores[i] >= target_score:
             logger.debug(f'player {i + 1} score >= target_score')
