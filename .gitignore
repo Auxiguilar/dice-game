@@ -11,3 +11,6 @@ wheels/
 
 # Logs
 game.log
+
+# Scripts
+start.sh
