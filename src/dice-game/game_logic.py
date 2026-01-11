@@ -61,10 +61,11 @@ def dice_selection_valid(dice: list[int]) -> bool:
     logger.debug(f'valid: True')
     return True
 
-def select_dice(dice: list[int]) -> list[int]:
+def select_dice(dice: list[int]) -> tuple[list[int], list[int]]:
     indexes: list[int] = []
     selection: list[int] = []
-    
+    remaining: list[int] = []
+
     while True:
         choices: str = input('Select dice based on list index:\n> ').strip()
         logger.debug(f'choices: "{choices}"')
@@ -92,9 +93,13 @@ def select_dice(dice: list[int]) -> list[int]:
             continue
 
         break
-    
+
+    for i in range(len(dice)):
+        if i not in indexes:
+            remaining.append(dice[i])
+
     logger.debug(f'selection: {selection}')
-    return selection
+    return selection, remaining
 
 def is_scorable(dice: list[int]) -> bool:
     if 1 in dice or 5 in dice:
@@ -133,12 +138,12 @@ def turn(num_dice: int = 6) -> int:
             return 0
 
         while True:
-            selection: list[int] = select_dice(dice)
+            selection, remaining = select_dice(dice)
             if dice_selection_valid(selection):
                 used_dice += len(selection)
                 throw_score: int = score_dice(selection)
                 turn_score += throw_score
-                print(f'Remaining: {[die for die in dice if die not in selection]}\nScored: {selection} for {throw_score}')
+                print(f'Remaining: {remaining}\nScored: {selection} for {throw_score}')
                 break
         
         if used_dice == num_dice:
