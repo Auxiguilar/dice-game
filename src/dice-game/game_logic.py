@@ -6,126 +6,84 @@ from random import randint as ri
 logger = logging.getLogger(__name__)
 
 
-T_RATE: float = 1 / 10
-
-
 
 #####################
 # Display functions #
 #####################
 
-def wait(sec: float) -> None:
-    time.sleep(sec)
+def cprint(string: str) -> None:
+    # Continuous print
+    for c in string:
+        print(c, sep='', end='', flush=True)
+        time.sleep(1 / 100)
+
+def show_game_start(player_count: int, target_score: int) -> None:
+    text: str = f'\nGame start!\nNumber of players: {player_count}\nTarget score: {target_score}\n> BEGIN'
+
+    cprint(text)
+    input()
 
 def show_player_turn(player: int, player_score: int) -> None:
-    print()
-    wait(T_RATE * 2)
-
-    print(f'Player {player}\'s turn')
-    wait(T_RATE)
-
-    print(f'Player {player}\'s score: {player_score}')
-    wait(T_RATE)
+    text: str = f'\nPlayer {player}\'s turn\nTotal score: {player_score}\n'
+    
+    cprint(text)
 
 def show_dice(dice: list[int]) -> None:
-    print('[', end='')
-
-    for i in range(len(dice) - 1):
-        print(f'{dice[i]}', end=', ', flush=True)
-        wait(T_RATE / 2)
-
-    print(f'{dice[-1]}]')
-    wait(T_RATE)
+    text: str = f'{dice}\n'
+    
+    cprint(text)
 
 def get_choices() -> str:
-    print('Select dice based on list index:')
-    wait(T_RATE)
-
-    return input('> ').strip()
+    text: str = f'Select dice based on list index:\n> '
+    
+    cprint(text)
+    return input().strip()
 
 def show_turn_loss() -> None:
-    print('Turn loss!')
-    wait(T_RATE)
+    text: str = f'Turn loss!\n'
+
+    cprint(text)
 
 def show_remaining(remaining: list[int]) -> None:
-    if remaining and len(remaining) > 1:
-        print('Remaining: [', end='')
+    text: str = f'Remaining: {remaining}\n'
 
-        for i in range(len(remaining) - 1):
-            print(f'{remaining[i]}', end=', ', flush=True)
-            wait(T_RATE / 2)
-
-        print(f'{remaining[-1]}]')
-        wait(T_RATE)
-
-    else:
-        print(f'Remaining:', end='')
-        wait(T_RATE / 2)
-
-        print(remaining)
-        wait(T_RATE)
+    cprint(text)
 
 def show_scored(selection: list[int], throw_score: int) -> None:
-    if selection and len(selection) > 1:
-        print('Scored: [', end='')
-        wait(T_RATE)
+    text: str = f'Score: {selection} for {throw_score}\n'
 
-        for i in range(len(selection) - 1):
-            print(f'{selection[i]}', end=', ', flush=True)
-            wait(T_RATE / 2)
-        
-        print(f'{selection[-1]}]', end='')
-        wait(T_RATE / 2)
-
-    else:
-        print(f'Scored:', end=' ')
-        wait(T_RATE / 2)
-
-        print(selection, end='')
-        wait(T_RATE / 2)
-
-    print(f' for {throw_score}')
-    wait(T_RATE)
+    cprint(text)
 
 def show_all_used() -> None:
-    print('All dice used!', end=' ')
-    wait(T_RATE)
+    text: str = f'All dice used! You may roll the full hand again...\n'
 
-    print('You may roll the full hand again...')
-    wait(T_RATE)
+    cprint(text)
 
 def will_continue() -> str:
-    print('Keep going?')
-    wait(T_RATE)
+    text: str = 'Keep going?\n> '
 
-    return input('> ').lower().strip()
+    cprint(text)
+    return input().lower().strip()
 
 def show_player_score(turn_score: int, player_score: int) -> None:
-    print(f'Turn score: {turn_score}')
-    wait(T_RATE)
-
-    print(f'Total score: {player_score}')
-    wait(T_RATE)
-
-    input('> OK ')
-    wait(T_RATE)
+    text: str = f'Turn score: {turn_score}\nTotal score: {player_score}\n> OK'
+    
+    cprint(text)
+    input()
 
 def show_winner(player: int, player_score) -> None:
-    print()
-    wait(T_RATE)
+    text: str = f'\nPlayer {player} wins with a score of {player_score}!\n'
 
-    print(f'Player {player} wins with a score of: {player_score}!')
-    wait(T_RATE)
+    cprint(text)
 
 def show_results(player_scores: list[int]) -> None:
     print()
-    wait(T_RATE)
 
     for i in range(len(player_scores)):
         player: int = i + 1
+        text: str = f'Player {player} score: {player_scores[i]}\n'
 
-        print(f'Player {player} score: {player_scores[i]}')
-        wait(T_RATE)
+        cprint(text)
 
 
 
@@ -176,10 +134,9 @@ def is_valid_choices(indexes: list[int], max_choices: int) -> bool:
             valid = False
 
     # Duplicate index
-    for n in range(len(indexes) - 1):
-        if len(set(indexes)) != len(indexes):
-            logger.debug(f'duplicate indexes: {indexes}')
-            valid = False
+    if len(set(indexes)) != len(indexes):
+        logger.debug(f'duplicate indexes: {indexes}')
+        valid = False
 
     logger.debug(f'valid: {valid}')
     return valid
@@ -356,6 +313,8 @@ def round(player_scores: list[int], target_score: int) -> bool:
 
 def game_loop(player_count: int = 2, target_score: int = 10_000):
     logger.info('game loop started')
+
+    show_game_start(player_count, target_score)
 
     player_scores: list[int] = [0] * player_count
     round_count: int = 0
