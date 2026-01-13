@@ -6,7 +6,7 @@ from random import randint as ri
 logger = logging.getLogger(__name__)
 
 
-PRINT_RATE: float = 1 / 10
+T_RATE: float = 1 / 10
 
 
 
@@ -14,80 +14,118 @@ PRINT_RATE: float = 1 / 10
 # Display functions #
 #####################
 
+def wait(sec: float) -> None:
+    time.sleep(sec)
+
 def show_player_turn(player: int, player_score: int) -> None:
     print()
-    time.sleep(PRINT_RATE)
+    wait(T_RATE * 2)
 
     print(f'Player {player}\'s turn')
-    time.sleep(PRINT_RATE)
+    wait(T_RATE)
 
     print(f'Player {player}\'s score: {player_score}')
-    time.sleep(PRINT_RATE)
+    wait(T_RATE)
 
 def show_dice(dice: list[int]) -> None:
     print('[', end='')
 
     for i in range(len(dice) - 1):
         print(f'{dice[i]}', end=', ', flush=True)
-        time.sleep(PRINT_RATE / 2)
+        wait(T_RATE / 2)
 
     print(f'{dice[-1]}]')
-    time.sleep(PRINT_RATE)
+    wait(T_RATE)
 
 def get_choices() -> str:
     print('Select dice based on list index:')
-    time.sleep(PRINT_RATE)
+    wait(T_RATE)
 
     return input('> ').strip()
 
-def select_and_score(dice: list[int]) -> tuple[int, int]:
-    if not is_scorable(dice):
-        print('Turn loss!')
-        time.sleep(PRINT_RATE)
+def show_turn_loss() -> None:
+    print('Turn loss!')
+    wait(T_RATE)
 
-        return 0, 0
-    
-    selection, remaining = select_dice(dice) # Should be safe...
-    num_scored: int = len(selection)
-    throw_score: int = score_dice(selection)
+def show_remaining(remaining: list[int]) -> None:
+    if remaining and len(remaining) > 1:
+        print('Remaining: [', end='')
 
-    print(f'Remaining: {remaining}')
-    time.sleep(PRINT_RATE)
+        for i in range(len(remaining) - 1):
+            print(f'{remaining[i]}', end=', ', flush=True)
+            wait(T_RATE / 2)
 
-    print(f'Score: {selection} for {throw_score}')
-    time.sleep(PRINT_RATE)
+        print(f'{remaining[-1]}]')
+        wait(T_RATE)
 
-    return throw_score, num_scored
+    else:
+        print(f'Remaining:', end='')
+        wait(T_RATE / 2)
+
+        print(remaining)
+        wait(T_RATE)
+
+def show_scored(selection: list[int], throw_score: int) -> None:
+    if selection and len(selection) > 1:
+        print('Scored: [', end='')
+        wait(T_RATE)
+
+        for i in range(len(selection) - 1):
+            print(f'{selection[i]}', end=', ', flush=True)
+            wait(T_RATE / 2)
+        
+        print(f'{selection[-1]}]', end='')
+        wait(T_RATE / 2)
+
+    else:
+        print(f'Scored:', end=' ')
+        wait(T_RATE / 2)
+
+        print(selection, end='')
+        wait(T_RATE / 2)
+
+    print(f' for {throw_score}')
+    wait(T_RATE)
+
+def show_all_used() -> None:
+    print('All dice used!', end=' ')
+    wait(T_RATE)
+
+    print('You may roll the full hand again...')
+    wait(T_RATE)
 
 def will_continue() -> str:
     print('Keep going?')
-    time.sleep(PRINT_RATE)
+    wait(T_RATE)
 
     return input('> ').lower().strip()
 
 def show_player_score(turn_score: int, player_score: int) -> None:
     print(f'Turn score: {turn_score}')
-    time.sleep(PRINT_RATE)
+    wait(T_RATE)
 
     print(f'Total score: {player_score}')
-    time.sleep(PRINT_RATE)
+    wait(T_RATE)
+
+    input('> OK ')
+    wait(T_RATE)
 
 def show_winner(player: int, player_score) -> None:
     print()
-    time.sleep(PRINT_RATE)
+    wait(T_RATE)
 
     print(f'Player {player} wins with a score of: {player_score}!')
-    time.sleep(PRINT_RATE)
+    wait(T_RATE)
 
 def show_results(player_scores: list[int]) -> None:
     print()
-    time.sleep(PRINT_RATE)
+    wait(T_RATE)
 
     for i in range(len(player_scores)):
         player: int = i + 1
 
         print(f'Player {player} score: {player_scores[i]}')
-        time.sleep(PRINT_RATE)
+        wait(T_RATE)
 
 
 
@@ -139,10 +177,8 @@ def is_valid_choices(indexes: list[int], max_choices: int) -> bool:
 
     # Duplicate index
     for n in range(len(indexes) - 1):
-        index: int = indexes[n]
-
-        if index in indexes[n + 1::]:
-            logger.debug(f'duplicate: {i} at index {n} is already in slice: {indexes[n + 1::]}')
+        if len(set(indexes)) != len(indexes):
+            logger.debug(f'duplicate indexes: {indexes}')
             valid = False
 
     logger.debug(f'valid: {valid}')
@@ -174,8 +210,7 @@ def is_valid_selection(selection: list[int]) -> bool:
 ####################################
 
 def throw_dice(num_dice: int) -> list[int]:
-    dice: list[int] = [ri(1,6) for i in range(num_dice)]
-    dice.sort()
+    dice: list[int] = sorted([ri(1,6) for i in range(num_dice)])
 
     logger.debug(f'dice: {dice}')
     return dice
@@ -185,7 +220,6 @@ def select_dice(dice: list[int]) -> tuple[list[int], list[int]]:
     remaining: list[int] = []
 
     while True:
-        select_from: list[int] = dice.copy()
         choices: str = get_choices()
         logger.debug(f'choices: "{choices}"')
 
@@ -195,7 +229,7 @@ def select_dice(dice: list[int]) -> tuple[list[int], list[int]]:
         if not is_valid_choices(indexes, len(dice)):
             continue
 
-        selection: list[int] = [select_from[i] for i in indexes]
+        selection: list[int] = [dice[i] for i in indexes]
         if not is_valid_selection(selection):
             selection.clear()
             continue
@@ -239,6 +273,20 @@ def score_dice(dice: list[int]) -> int:
     logger.debug(f'score: {score}')
     return score
 
+def select_and_score(dice: list[int]) -> tuple[int, int]:
+    if not is_scorable(dice):
+        show_turn_loss()
+        return 0, 0
+    
+    selection, remaining = select_dice(dice)
+    num_scored: int = len(selection)
+    throw_score: int = score_dice(selection)
+
+    show_remaining(remaining)
+    show_scored(selection, throw_score)
+
+    return throw_score, num_scored
+
 
 
 ##########################
@@ -269,9 +317,8 @@ def turn(num_dice: int = 6) -> int:
         if used_dice == num_dice:
             used_dice = 0
             
-            print('All dice used! You may roll the full hand again...')
+            show_all_used()
             logger.info(f'all dice used')
-            time.sleep(PRINT_RATE)
 
         if 'n' == will_continue():
             logger.debug('player rerolling')
